@@ -29,18 +29,27 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     @Override
     public void register(User request, StreamObserver<RegisterResponse> responseObserver) {
         String username = request.getUsername();
+        if (username == null) {
+            RegisterResponse resposta = RegisterResponse.newBuilder()
+                    .setSuccess(false)
+                    .setUsername("")
+                    .build();
+            responseObserver.onNext(resposta);
+            responseObserver.onCompleted();
+            return;
+        }
 
-        // TODO: verificar se o nome já está em uso
-        // Dica: use usuariosRegistrados.contains(username)
+        // Tenta adicionar ao conjunto; se já existir, add() retorna false
+        boolean added = usuariosRegistrados.add(username);
 
-        // TODO: se duplicado, responder com success = false
-        // Dica: RegisterResponse.newBuilder().setSuccess(false).setUsername(username).build()
+        RegisterResponse resposta = RegisterResponse.newBuilder()
+                .setSuccess(added)
+                .setUsername(username)
+                .build();
 
-        // TODO: se disponível, adicionar ao Set e responder com success = true
+        System.out.println("Register chamado para: " + username + " -> " + (added ? "OK" : "DUPLICADO"));
 
-        // TODO: chamar responseObserver.onNext(resposta) e responseObserver.onCompleted()
-
-        System.out.println("Register chamado para: " + username);
+        responseObserver.onNext(resposta);
         responseObserver.onCompleted();
     }
 
