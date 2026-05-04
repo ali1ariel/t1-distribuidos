@@ -60,12 +60,15 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     public void receiveMessages(User request, StreamObserver<ChatMessage> responseObserver) {
         String username = request.getUsername();
 
-        // TODO: adicionar o observer à lista de ativos
-        // Dica: observersAtivos.add(responseObserver)
+        observersAtivos.add(responseObserver);
 
-        // TODO (RFA07): emitir notificação de entrada para todos
-        // Dica: criarMensagemSistema(username + " entrou na sala")
-        //       e chamar broadcast(mensagem)
+        io.grpc.Context.current().addListener(context -> {
+            observersAtivos.remove(responseObserver);
+            broadcast(criarMensagemSistema(username + " saiu da sala"));
+            System.out.println(username + " desconectou.");
+        }, java.util.concurrent.Executors.newSingleThreadExecutor());
+
+        broadcast(criarMensagemSistema(username + " entrou na sala"));
 
         System.out.println(username + " abriu stream de recebimento.");
 
@@ -80,11 +83,10 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
     @Override
     public void sendMessage(ChatMessage request, StreamObserver<Ack> responseObserver) {
 
-        // TODO: fazer broadcast da mensagem para todos os observers ativos
-        // Dica: broadcast(request)
+        broadcast(request);
 
-        // TODO: responder com Ack(success = true)
-        // Dica: Ack.newBuilder().setSuccess(true).build()
+        Ack ack = Ack.newBuilder().setSuccess(true).build();
+        responseObserver.onNext(ack);
 
         System.out.println("Mensagem recebida de " + request.getFrom() + ": " + request.getContent());
 
@@ -93,18 +95,15 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
     // -------------------------------------------------------------------------
     // Método auxiliar — Broadcast para todos os clientes conectados
-    // -------------------------------------------------------------------------
+    // -------------------------------------    ------------------------------------
     private void broadcast(ChatMessage mensagem) {
-        // TODO: iterar sobre observersAtivos e chamar observer.onNext(mensagem)
-        // Dica: use um for-each com try/catch para remover observers com erro
-        //
-        // for (StreamObserver<ChatMessage> observer : observersAtivos) {
-        //     try {
-        //         observer.onNext(mensagem);
-        //     } catch (Exception e) {
-        //         observersAtivos.remove(observer);
-        //     }
-        // }
+        for (StreamObserver<ChatMessage> observer : observersAtivos) {
+            try {
+                observer.onNext(mensagem);
+            } catch (Exception e) {
+                observersAtivos.remove(observer);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
