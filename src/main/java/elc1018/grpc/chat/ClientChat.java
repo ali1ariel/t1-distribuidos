@@ -22,25 +22,19 @@ public class ClientChat {
     private final ChatServiceGrpc.ChatServiceStub stubAsync;
     private String username;
 
-    // -------------------------------------------------------------------------
-    // Construtor — abre o canal gRPC com o servidor
-    // -------------------------------------------------------------------------
     public ClientChat(String host, int porta) {
         canal = ManagedChannelBuilder
                 .forAddress(host, porta)
-                .usePlaintext()  // sem TLS — adequado para ambiente local
+                .usePlaintext()
                 .build();
 
-        // Stub bloqueante: usado para Register e SendMessage (unary)
+        // usado para Register e SendMessage (unary)
         stubBlocking = ChatServiceGrpc.newBlockingStub(canal);
 
-        // Stub assíncrono: usado para ReceiveMessages (server streaming)
+        // usado para ReceiveMessages (server streaming)
         stubAsync = ChatServiceGrpc.newStub(canal);
     }
 
-    // -------------------------------------------------------------------------
-    // RFA01 — Registrar usuário no servidor
-    // -------------------------------------------------------------------------
     public boolean registrar(String username) {
         User user = User.newBuilder()
                 .setUsername(username)
@@ -58,9 +52,6 @@ public class ClientChat {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // RFA05 — Abrir stream de recebimento de mensagens (em thread separada)
-    // -------------------------------------------------------------------------
     public void iniciarRecebimento(CountDownLatch latch) {
         User user = User.newBuilder()
                 .setUsername(username)
@@ -70,29 +61,25 @@ public class ClientChat {
 
             @Override
             public void onNext(ChatMessage mensagem) {
-                // Formata e exibe cada mensagem recebida
                 String hora = formatarTimestamp(mensagem.getTimestamp());
                 System.out.println("\n[" + hora + "] " + mensagem.getFrom() + ": " + mensagem.getContent());
-                System.out.print("> "); // reexibe o prompt após a mensagem chegar
+                System.out.print("> ");
             }
 
             @Override
             public void onError(Throwable t) {
                 System.out.println("\nConexão com o servidor encerrada: " + t.getMessage());
-                latch.countDown(); // libera o loop principal
+                latch.countDown();
             }
 
             @Override
             public void onCompleted() {
                 System.out.println("\nServidor encerrou a conexão.");
-                latch.countDown(); // libera o loop principal
+                latch.countDown();
             }
         });
     }
 
-    // -------------------------------------------------------------------------
-    // RFA03 — Enviar mensagem ao servidor
-    // -------------------------------------------------------------------------
     public void enviarMensagem(String conteudo) {
         Instant agora = Instant.now();
 
@@ -112,16 +99,10 @@ public class ClientChat {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Encerrar o canal gRPC
-    // -------------------------------------------------------------------------
     public void encerrar() throws InterruptedException {
         canal.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
-    // -------------------------------------------------------------------------
-    // Auxiliar — Formata o Timestamp para exibição (HH:mm:ss)
-    // -------------------------------------------------------------------------
     private String formatarTimestamp(Timestamp ts) {
         if (ts == null || (ts.getSeconds() == 0 && ts.getNanos() == 0)) {
             return "--:--:--";
@@ -131,9 +112,6 @@ public class ClientChat {
         return String.format("%02d:%02d:%02d", hora.getHour(), hora.getMinute(), hora.getSecond());
     }
 
-    // -------------------------------------------------------------------------
-    // main — ponto de entrada do cliente
-    // -------------------------------------------------------------------------
     public static void main(String[] args) throws InterruptedException {
         String host = "localhost";
         int porta = 50051;
@@ -141,7 +119,6 @@ public class ClientChat {
         Scanner scanner = new Scanner(System.in);
         ClientChat cliente = new ClientChat(host, porta);
 
-        // Pede o username e tenta registrar — repete até conseguir um nome válido
         boolean registrado = false;
         while (!registrado) {
             System.out.print("Digite seu nome de usuário: ");
@@ -155,16 +132,13 @@ public class ClientChat {
             registrado = cliente.registrar(username);
         }
 
-        // Latch usado para detectar quando o servidor desconectar
         CountDownLatch latch = new CountDownLatch(1);
 
-        // Inicia o stream de recebimento em thread separada (assíncrono)
         cliente.iniciarRecebimento(latch);
 
         System.out.println("Conectado! Digite suas mensagens abaixo (ou 'sair' para encerrar):");
         System.out.print("> ");
 
-        // Loop principal — lê mensagens do terminal e envia ao servidor
         while (latch.getCount() > 0) {
             if (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();

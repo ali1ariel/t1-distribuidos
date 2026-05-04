@@ -15,17 +15,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
 
-    // Lista thread-safe de streams ativos — um por cliente conectado
+    // Lista de streams ativos
     private final CopyOnWriteArrayList<StreamObserver<ChatMessage>> observersAtivos =
             new CopyOnWriteArrayList<>();
 
-    // Conjunto thread-safe de usernames já registrados
+    // Conjunto deusernames já registrados
     private final Set<String> usuariosRegistrados =
             ConcurrentHashMap.newKeySet();
 
-    // -------------------------------------------------------------------------
-    // RFA01 — Registro de usuário único
-    // -------------------------------------------------------------------------
     @Override
     public void register(User request, StreamObserver<RegisterResponse> responseObserver) {
         String username = request.getUsername();
@@ -39,7 +36,6 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
             return;
         }
 
-        // Tenta adicionar ao conjunto; se já existir, add() retorna false
         boolean added = usuariosRegistrados.add(username);
 
         RegisterResponse resposta = RegisterResponse.newBuilder()
@@ -53,9 +49,6 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         responseObserver.onCompleted();
     }
 
-    // -------------------------------------------------------------------------
-    // RFA05 — Stream de recebimento de mensagens
-    // -------------------------------------------------------------------------
     @Override
     public void receiveMessages(User request, StreamObserver<ChatMessage> responseObserver) {
         String username = request.getUsername();
@@ -71,15 +64,8 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         broadcast(criarMensagemSistema(username + " entrou na sala"));
 
         System.out.println(username + " abriu stream de recebimento.");
-
-        // Observação: este método NÃO chama onCompleted() aqui —
-        // o stream fica aberto até o cliente desconectar.
-        // A desconexão é detectada via onError() ou onCompleted() do observer.
     }
 
-    // -------------------------------------------------------------------------
-    // RFA03 — Envio e broadcast de mensagens
-    // -------------------------------------------------------------------------
     @Override
     public void sendMessage(ChatMessage request, StreamObserver<Ack> responseObserver) {
 
@@ -93,9 +79,6 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         responseObserver.onCompleted();
     }
 
-    // -------------------------------------------------------------------------
-    // Método auxiliar — Broadcast para todos os clientes conectados
-    // -------------------------------------    ------------------------------------
     private void broadcast(ChatMessage mensagem) {
         for (StreamObserver<ChatMessage> observer : observersAtivos) {
             try {
@@ -106,9 +89,6 @@ public class ChatServiceImpl extends ChatServiceGrpc.ChatServiceImplBase {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Método auxiliar — Cria uma mensagem de sistema (entrada/saída)
-    // -------------------------------------------------------------------------
     private ChatMessage criarMensagemSistema(String conteudo) {
         Instant agora = Instant.now();
         return ChatMessage.newBuilder()
