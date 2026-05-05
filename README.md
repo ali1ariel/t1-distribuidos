@@ -1,5 +1,8 @@
 # Chat gRPC — ELC1018 Sistemas Distribuídos
 
+Alisson Ariel dos Santos Machado 
+Viviane Dilkin Endler 
+
 Aplicação de chat distribuído com suporte a múltiplos usuários em uma única sala, utilizando Java, gRPC e Protocol Buffers. Desenvolvido utilizando o IntelliJ como editor e compilado utilizando as ferramentas do editor.
 
 ## Arquitetura
