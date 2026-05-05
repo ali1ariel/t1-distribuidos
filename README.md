@@ -1,11 +1,6 @@
 # Chat gRPC — ELC1018 Sistemas Distribuídos
 
-Aplicação de chat distribuído com suporte a múltiplos usuários em uma única sala, utilizando Java, gRPC e Protocol Buffers.
-
-## Requisitos
-
-- Java 17+
-- Maven 3.8+
+Aplicação de chat distribuído com suporte a múltiplos usuários em uma única sala, utilizando Java, gRPC e Protocol Buffers. Desenvolvido utilizando o IntelliJ como editor e compilado utilizando as ferramentas do editor.
 
 ## Arquitetura
 
@@ -22,18 +17,6 @@ ClientChat  ──┘                              │
 |---|---|---|
 | Servidor | `ServerChat` | Gerencia a sala única e faz broadcast das mensagens |
 | Cliente | `ClientChat` | Registra usuário, envia e recebe mensagens em tempo real |
-
-### Contrato (.proto)
-
-O serviço é definido em `src/main/proto/contrato-chat.proto`:
-
-```proto
-service ChatService {
-  rpc Register(User)               returns (RegisterResponse);   // unary
-  rpc SendMessage(ChatMessage)     returns (Ack);                // unary
-  rpc ReceiveMessages(User)        returns (stream ChatMessage); // server streaming
-}
-```
 
 ## Como compilar
 
@@ -87,9 +70,3 @@ Conectado! Digite suas mensagens abaixo (ou 'sair' para encerrar):
 
 - **Unary**: `Register` e `SendMessage` — requisição única com resposta única
 - **Server Streaming**: `ReceiveMessages` — o servidor empurra mensagens continuamente ao cliente
-
-## Restrições respeitadas
-
-- Comunicação exclusivamente via gRPC (sem sockets diretos, sem REST)
-- Arquivo `.proto` utilizado sem alterações
-- Sem bibliotecas externas de chat
