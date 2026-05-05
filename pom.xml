@@ -17,8 +17,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <grpc.version>1.63.0</grpc.version>
-        <protobuf.version>3.25.3</protobuf.version>
+        <grpc.version>1.64.0</grpc.version>
+        <protobuf.version>3.25.5</protobuf.version>
         <protobuf-plugin.version>0.6.1</protobuf-plugin.version>
     </properties>
 
@@ -124,6 +124,9 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
